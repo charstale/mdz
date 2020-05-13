@@ -23,6 +23,7 @@ def open_md(md_path,editor_path):
             os.system(editor_path)
             return
 
+        print(f'{editor_path} "{md_path}"')
         os.system(f'{editor_path} "{md_path}"')
 
 
@@ -32,12 +33,17 @@ def open_md(md_path,editor_path):
 
 
 
-def new_md(path):
+def new_md(md_path):
+    print(md_path)
+
     try:
-        os.mknod(path)
-        return 0
+        # os.mknod(f'"{path}"')
+
+        f=open(md_path,'w')
+        f.close()
+        return True
     except:
-        return None
+        return False
 
 
 
@@ -55,25 +61,36 @@ def extract_mz(mz_path,tmp_folder,zpath):
 def decompress_mz(mz_path,tmp_folder,zpath):
 
 
-    fsize = os.path.getsize(mz_path)
-    print(fsize)
-    if not fsize:
-        return None
+    # fsize = os.path.getsize(mz_path)
+    # print(fsize)
+    # if not fsize:
+    #     return None
 
-    rlt=extract_mz(mz_path, tmp_folder, zpath)
-    if not rlt:return None
-
-    filename = os.path.basename(mz_path).split('.')[0]
-    md_path = os.path.join(tmp_folder, f"{filename}.md")
+    # rlt=extract_mz(mz_path, tmp_folder, zpath)
+    # if not rlt:return None
 
 
-    return md_path
+    print (f'{zpath} x "{mz_path}" -aoa -o{tmp_folder} ')
+
+    os.system(f'{zpath} x "{mz_path}" -aoa -o{tmp_folder} ')
+
+
+    return True
+
+
+    # filename = os.path.basename(mz_path).split('.')[0]
+    # md_path = os.path.join(tmp_folder, f"{filename}.md")
+    #
+    #
+    # return md_path
 
 def compress_mz(mz_path,tmp_folder,zpath):
 
+    fsize = os.path.getsize(mz_path)
+    if not fsize:
+        os.remove(mz_path)
 
-
-    print(f"{zpath} u  {mz_path} {tmp_folder}\* ")
+    print(f'{zpath} u  "{mz_path}" {tmp_folder}\* ')
     os.system(f'{zpath} u  "{mz_path}" {tmp_folder}\* ')
 
 def get_input_path():
@@ -174,10 +191,28 @@ def handle_mz(input_path):
 
     tmp_folder = mk_tmp_folder()
 
-    md_path = decompress_mz(mz_path, tmp_folder, zpath)
+
+
+    filename = os.path.basename(mz_path).split('.')[0]
+    md_path = os.path.join(tmp_folder, f"{filename}.md")
+
+    rlt=False
+    fsize = os.path.getsize(mz_path)
+    if fsize==0:
+        rlt=new_md(md_path)
+    else:
+        rlt=decompress_mz(mz_path, tmp_folder, zpath)
+
+    if not rlt:
+        print("mdz文件处理失败")
+        os.system(editor_path)
+        return -1
 
     open_md(md_path, editor_path)
-    compress_mz(mz_path, tmp_folder, zpath)
+
+    md_size = os.path.getsize(md_path)
+    if md_size!=0:
+        compress_mz(mz_path, tmp_folder, zpath)
     rm_tmp_folder(tmp_folder)
 
 
@@ -239,7 +274,7 @@ def run():
     input_path=get_input_path()
 
 
-    #input_path="E:\笔记文档\GAS with Clasp(未完成).md"
+    input_path="E:\笔记文档\GIT\git rm用法.mdz"
 
     if input_path.endswith("mdz"):
         handle_mz(input_path)
