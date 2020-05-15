@@ -6,7 +6,7 @@ import sys
 
 import os
 import shutil
-
+import zipfile
 # import win32process
 # import win32event
 
@@ -50,42 +50,50 @@ def new_md(md_path):
 def extract_mz(mz_path,tmp_folder,zpath):
 
 
-    print (f'{zpath} x "{mz_path}" -aoa -o{tmp_folder} ')
-
-    os.system(f'{zpath} x "{mz_path}" -aoa -o{tmp_folder} ')
-
-
-    return True
-
-
-def decompress_mz(mz_path,tmp_folder,zpath):
-
-
-    # fsize = os.path.getsize(mz_path)
-    # print(fsize)
-    # if not fsize:
-    #     return None
-
-    # rlt=extract_mz(mz_path, tmp_folder, zpath)
-    # if not rlt:return None
-
-
-    print (f'{zpath} x "{mz_path}" -aoa -o{tmp_folder} ')
-
-    os.system(f'{zpath} x "{mz_path}" -aoa -o{tmp_folder} ')
-
-
-    return True
-
-
-    # filename = os.path.basename(mz_path).split('.')[0]
-    # md_path = os.path.join(tmp_folder, f"{filename}.md")
+    # print (f'{zpath} x "{mz_path}"  -o{tmp_folder} ')
     #
-    #
-    # return md_path
+    # os.system(f'{zpath} x "{mz_path}" -o{tmp_folder} ')
 
-def compress_mz(mz_path,tmp_folder,zpath):
-    
+    with zipfile.ZipFile(mz_path, mode='a', compression=zipfile.ZIP_LZMA) as zip_file:
+        for i in os.walk(tmp_folder):
+            for n in i[2]:
+                zip_file.write(''.join((i[0], '\\', n)))
+
+        return True
+
+    return False
+
+
+
+
+
+def decompress_mz(mz_path,tmp_folder_path):
+
+
+
+    # print (f'{zpath} x "{mz_path}" -aoa -o{tmp_folder} ')
+    # os.system(f'{zpath} x "{mz_path}" -aoa -o{tmp_folder} ')
+
+    # return True
+
+    try:
+        zip_file= zipfile.ZipFile(mz_path, 'r')
+        zip_file.extractall(tmp_folder_path)
+        zip_file.close()
+
+        return True
+    except:
+        return False
+
+
+def compress_mz(mz_path,tmp_folder):
+
+    #应对三种情况的压缩
+    #1.md文件存在，assets文件夹存在,则mz文件不存在
+    #2.新建mz文件，则mz存在，但是大小为0
+    #3.解压mz文件产生md文件和assets文件夹，则mz文件存在，文件大小不为0
+
+
 
     if os.path.exists(mz_path):
 
@@ -93,8 +101,21 @@ def compress_mz(mz_path,tmp_folder,zpath):
         if not fsize:
             os.remove(mz_path)
 
-    print(f'{zpath} u  "{mz_path}" {tmp_folder}\* ')
-    os.system(f'{zpath} a -tzip -mcu "{mz_path}" {tmp_folder}\* ')
+    # print(f'{zpath} u  "{mz_path}" {tmp_folder}\* ')
+    # os.system(f'{zpath} a -tzip -mcu "{mz_path}" {tmp_folder}\* ')
+
+    with zipfile.ZipFile(mz_path, mode='w', compression=zipfile.ZIP_LZMA) as zip_file:
+
+        os.chdir(tmp_folder)
+        for i in os.walk("."):
+            for n in i[2]:
+                zip_file.write(''.join((i[0], '\\', n)))
+
+        return True
+
+    return False
+
+
 
 def get_input_path():
 
@@ -122,17 +143,16 @@ def mk_tmp_folder():
     import uuid
 
     uuid = uuid.uuid1()
-    print(uuid)
+
 
     systmp=os.environ.get('tmp')
 
     tmpdir = os.path.join(systmp, str(uuid))
     print(tmpdir)
+
     try:
         os.mkdir(tmpdir)
-
         return tmpdir
-
     except:
         return None
 
@@ -186,11 +206,11 @@ def handle_mz(input_path):
     # print(3)
     # os.system("pause")
 
-    zpath = get_7z()
-    if not os.path.exists(zpath):
-        print("7z不存在")
-        os.system(editor_path)
-        return -1
+    # zpath = get_7z()
+    # if not os.path.exists(zpath):
+    #     print("7z不存在")
+    #     os.system(editor_path)
+    #     return -1
 
     tmp_folder = mk_tmp_folder()
 
@@ -204,7 +224,7 @@ def handle_mz(input_path):
     if fsize==0:
         rlt=new_md(md_path)
     else:
-        rlt=decompress_mz(mz_path, tmp_folder, zpath)
+        rlt=decompress_mz(mz_path, tmp_folder)
 
     if not rlt:
         print("mdz文件处理失败")
@@ -215,7 +235,7 @@ def handle_mz(input_path):
 
     md_size = os.path.getsize(md_path)
     if md_size!=0:
-        compress_mz(mz_path, tmp_folder, zpath)
+        compress_mz(mz_path, tmp_folder)
     rm_tmp_folder(tmp_folder)
 
 
@@ -224,11 +244,11 @@ def handle_md(input_path):
     if not editor_path or not os.path.exists(editor_path):
         print("未设置编辑器")
         return -1
-    zpath = get_7z()
-    if not os.path.exists(zpath):
-        print("7z不存在")
-        os.system(editor_path)
-        return -1
+    # zpath = get_7z()
+    # if not os.path.exists(zpath):
+    #     print("7z不存在")
+    #     os.system(editor_path)
+    #     return -1
     # tmp_folder = mk_tmp_folder()
 
     md_path = input_path#get_input_path()
@@ -259,7 +279,7 @@ def handle_md(input_path):
         if os.path.exists(mz_path):##覆盖提醒
             pass
 
-        compress_mz(mz_path, tmp_folder, zpath)
+        compress_mz(mz_path, tmp_folder)
         rm_tmp_folder(tmp_folder)
 
 
@@ -277,7 +297,7 @@ def run():
     input_path=get_input_path()
 
 
-    #input_path="E:\笔记文档\GIT\git rm用法.mdz"
+    # input_path="E:\笔记文档\GIT\git log中文乱码解决.mdz"
 
     if input_path.endswith("mdz"):
         handle_mz(input_path)
