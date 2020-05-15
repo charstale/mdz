@@ -85,13 +85,16 @@ def decompress_mz(mz_path,tmp_folder,zpath):
     # return md_path
 
 def compress_mz(mz_path,tmp_folder,zpath):
+    
 
-    fsize = os.path.getsize(mz_path)
-    if not fsize:
-        os.remove(mz_path)
+    if os.path.exists(mz_path):
+
+        fsize = os.path.getsize(mz_path)
+        if not fsize:
+            os.remove(mz_path)
 
     print(f'{zpath} u  "{mz_path}" {tmp_folder}\* ')
-    os.system(f'{zpath} u  "{mz_path}" {tmp_folder}\* ')
+    os.system(f'{zpath} a -tzip -mcu "{mz_path}" {tmp_folder}\* ')
 
 def get_input_path():
 
@@ -274,7 +277,7 @@ def run():
     input_path=get_input_path()
 
 
-    input_path="E:\笔记文档\GIT\git rm用法.mdz"
+    #input_path="E:\笔记文档\GIT\git rm用法.mdz"
 
     if input_path.endswith("mdz"):
         handle_mz(input_path)
